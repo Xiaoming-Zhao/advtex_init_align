@@ -1,0 +1,40 @@
+name: advtex_init_align
+channels:
+  - defaults
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - numpy
+  - pandas
+  - scipy
+  - pillow
+  - tqdm
+  - h5py
+  - jupyterlab
+  - matplotlib
+  - joblib
+  - lz4
+  - pip
+  - pytorch=1.9.0
+  - torchvision=0.10.0
+  - cudatoolkit=10.2
+  - tensorboard
+  - cmake
+  - pip:
+    - lpips
+    - trimesh
+    - pypng
+    - plyfile
+    - opt_einsum
+    - line_profiler
+    - yacs
+    - scikit-image
+    - imageio
+    - plotly
+    - opencv-python
+    - black
+    - 'isort<5'
+    - flake8
+    - flake8-bugbear
+    - flake8-comprehensions
