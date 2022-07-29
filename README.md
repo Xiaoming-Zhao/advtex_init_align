@@ -11,7 +11,7 @@
 **Initialization and Alignment for Adversarial Texture Optimization. ECCV 2022.**<br>
 [Xiaoming Zhao](https://xiaoming-zhao.com/), [Zhizhen Zhao](https://zhizhenz.ece.illinois.edu/), and [Alexander G. Schwing](https://www.alexander-schwing.de/).
 
-### [Project Page](https://xiaoming-zhao.github.io/projects/advtex_init_align/) | Paper (coming soon)
+### [Project Page](https://xiaoming-zhao.github.io/projects/advtex_init_align/) | [Paper](https://arxiv.org/abs/2207.14289)
 
 ## Table of Contents
 
