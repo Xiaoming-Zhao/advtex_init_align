@@ -24,14 +24,14 @@
 
 ## Environment Setup
 ```
-conda env create -f environment.yml
+conda env create -f environment.yaml
 ```
 
 We set the following environment variables for later usage:
 ```bash
 cd /path/to/this/repo
 CODE_ROOT=$PWD
-export TEX_INIT_DIR=${CODE_ROOT}/tex_reconstruct/tex_init
+export TEX_INIT_DIR=${CODE_ROOT}/advtex_init_align/tex_init
 
 export THIRDPARTY_DIR=${CODE_ROOT}/third_parties
 mkdir -p ${THIRDPARTY_DIR}
@@ -76,7 +76,7 @@ The data is in binary format and consists of information for RGB, depth, camera 
 export PYTHONPATH=${CODE_ROOT}:$PYTHONPATH && \
 python ${CODE_ROOT}/advtex_init_align/data/bin_data_reader.py \
 --stream_dir ${CODE_ROOT}/dataset/raw/${SCENE_ID} \
---save_dir ${CODE_ROOT}/dataset/extraced/${SCENE_ID}
+--save_dir ${CODE_ROOT}/dataset/extracted/${SCENE_ID}
 ```
 
 The extracted data will be saved with structure:

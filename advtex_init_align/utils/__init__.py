@@ -1,7 +1,6 @@
 from advtex_init_align.utils.renderer_utils import *
 from advtex_init_align.utils.io_utils import *
 from advtex_init_align.utils.img_utils import *
-from advtex_init_align.utils.torch_utils import *
 from advtex_init_align.utils.config import (
     Config,
     get_config,
