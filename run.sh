@@ -6,7 +6,7 @@ SCENE_ID="$2"
 RUN_TRAIN="$3"
 
 DATA_DIR=${REPO_DIR}/dataset
-EXP_DIR=${REPO_DIR}/experiments
+EXP_DIR=${REPO_DIR}/experiments/uofi
 
 MRF_BIN=${REPO_DIR}/advtex_init_align/tex_init/tex_init
 
@@ -94,7 +94,7 @@ do
         printf "\nstart generating new stream file ...\n"
 
         python ${REPO_DIR}/advtex_init_align/data/gen_train_stream.py \
-        --stream_dir_list ${DATA_DIR}/raw/${SCENE_ID} \
+        --stream_dir_list ${DATA_DIR}/uofi/${SCENE_ID} \
         --save_dir ${EXP_DIR}/${SCENE_ID} \
         --sample_freq_list ${sample_freq} \
         --sample_freq_for_train 0
@@ -155,6 +155,7 @@ do
 
         # Run AdvTex
         python ${REPO_DIR}/advtex_init_align/tex_smooth/optim_patch_torch.py \
+        --seed ${SEED} \
         --use_mislaign_offset 1 \
         --from_scratch 0 \
         --n_patches_h 1 \
@@ -168,7 +169,7 @@ do
         # save GT images to disk
         # Set prepare_for_test_only to 0 if you want to save all GT images (train + test)
         python ${REPO_DIR}/advtex_init_align/data/format_converter/convert_mrf_result_to_adv_tex.py \
-        --stream_f_list ${DATA_DIR}/raw/${SCENE_ID}/Recv.stream \
+        --stream_f_list ${DATA_DIR}/uofi/${SCENE_ID}/Recv.stream \
         --obj_f_list ${EXP_DIR}/${SCENE_ID}/${DIR_PREFIX}_1_${sample_freq}/${MRF_DIR_NAME}/fused/TexAlign.obj \
         --save_dir ${EXP_DIR}/${SCENE_ID}/${DIR_PREFIX}_1_${sample_freq}/raw_rgbs \
         --atlas_size ${MTL_ATLAS_SIZE} \
@@ -180,7 +181,7 @@ do
 
         # Render from optimized texture
         python ${REPO_DIR}/advtex_init_align/data/format_converter/convert_mrf_result_to_adv_tex.py \
-        --stream_f_list ${DATA_DIR}/raw/${SCENE_ID}/Recv.stream \
+        --stream_f_list ${DATA_DIR}/uofi/${SCENE_ID}/Recv.stream \
         --obj_f_list ${EXP_DIR}/${SCENE_ID}/${DIR_PREFIX}_1_${sample_freq}/optim/${MRF_NAME}_${MTL_RES}_${MTL_RES}_atlas_${MTL_ATLAS_SIZE}/seed_${SEED}-scratch_0-offset_1_n_patch_h_${N_PATCHES_H}_w_${N_PATCHES_W}/shape/TexAlign.obj \
         --save_dir ${EXP_DIR}/${SCENE_ID}/${DIR_PREFIX}_1_${sample_freq}/optim/${MRF_NAME}_${MTL_RES}_${MTL_RES}_atlas_${MTL_ATLAS_SIZE}/seed_${SEED}-scratch_0-offset_1_n_patch_h_${N_PATCHES_H}_w_${N_PATCHES_W} \
         --atlas_size ${MTL_ATLAS_SIZE} \
@@ -190,6 +191,7 @@ do
         # Compute metrics
         python ${REPO_DIR}/advtex_init_align/eval/compute_metrics.py \
         --nproc 10 \
+        --dataset uofi \
         --scene_id ${SCENE_ID} \
         --save_dir ${EXP_DIR}/${SCENE_ID}/${DIR_PREFIX}_1_${sample_freq}/eval_results \
         --sample_freq_list ${DIR_PREFIX}_1_${sample_freq} \

@@ -34,11 +34,17 @@ from advtex_init_align.utils.img_utils import (
 )
 from advtex_init_align.eval.exp_list import (
     SEED,
+    # UofI Texture Scenes
     GT,
-    ALL_EXPS,
     MTL_ATLAS_SIZE,
     MTL_RES_DICT,
+    # ScanNet
+    SCANNET_GT,
+    SCANNET_MTL_ATLAS_SIZE,
+    SCANNET_MTL_RES,
+    SCANNET_N_PARTS,
     METHOD_ID_ABBREVIATION,
+    ALL_EXPS,
 )
 
 
@@ -66,7 +72,13 @@ def compute_s3_val(s3_mat, quant_val=0.99):
 
 
 def align_imgs(
-    img_gt, img_rendered_dict, mask_rendered_dict, s3_gt=None, s3_rendered_dict=None, existed_offset_dict=None, existed_agg_mask=None,
+    img_gt,
+    img_rendered_dict,
+    mask_rendered_dict,
+    s3_gt=None,
+    s3_rendered_dict=None,
+    existed_offset_dict=None,
+    existed_agg_mask=None,
 ):
 
     img_h, img_w, _ = img_gt.shape
@@ -111,7 +123,12 @@ def align_imgs(
         agg_ref_min_col = np.max(gt_boundaries[:, 2])
         agg_ref_max_col = np.min(gt_boundaries[:, 3])
     else:
-        agg_ref_min_row, agg_ref_max_row, agg_ref_min_col, agg_ref_max_col = existed_offset_dict["agg_ref_boundary"]
+        (
+            agg_ref_min_row,
+            agg_ref_max_row,
+            agg_ref_min_col,
+            agg_ref_max_col,
+        ) = existed_offset_dict["agg_ref_boundary"]
 
     offset_dict["agg_ref_boundary"] = (
         agg_ref_min_row,
@@ -209,8 +226,16 @@ def align_imgs(
 
 
 def compute_metrics_single_view(
-    scene_id, view_id, input_dir_dict, input_k_list, debug_dir,
-    flag_compute_s3=False, existed_offset_dict=None, existed_debug_dir=None, sample_freq=None,
+    dataset,
+    scene_id,
+    view_id,
+    input_dir_dict,
+    input_k_list,
+    debug_dir,
+    flag_compute_s3=False,
+    existed_offset_dict=None,
+    existed_debug_dir=None,
+    sample_freq=None,
 ):
 
     # read image
@@ -228,22 +253,39 @@ def compute_metrics_single_view(
             tmp_s3_mat_f = os.path.join(tmp_root, f"s3_mats/{view_id:05d}/s3.mat")
             tmp_s3_mat = sio.loadmat(tmp_s3_mat_f)["s3"]
             s3_mat_rendered_dict[input_k] = tmp_s3_mat
-        
-    gt_f = os.path.join(
-        GT.format(scene_id=scene_id, sample_freq=sample_freq), f"raw_rgbs/{view_id:05d}_raw_color.png"
-    )
+
+    if "scannet" in input_k_list[0]:
+        gt_f = os.path.join(
+            SCANNET_GT.format(
+                dataset=dataset, scene_id=scene_id, sample_freq=sample_freq
+            ),
+            f"{view_id:05d}_raw_color.png",
+        )
+    else:
+        gt_f = os.path.join(
+            GT.format(dataset=dataset, scene_id=scene_id, sample_freq=sample_freq),
+            f"raw_rgbs/{view_id:05d}_raw_color.png",
+        )
     img_gt = np.array(Image.open(gt_f))
 
     raw_h, raw_w, _ = img_gt.shape
 
     if flag_compute_s3:
-        s3_mat_gt_f = os.path.join(
-            GT.format(scene_id=scene_id), f"s3_mats/{view_id:05d}/s3.mat"
-        )
+        if "scannet" in input_k_list[0]:
+            tmp_gt = SCANNET_GT.format(
+                dataset=dataset, scene_id=scene_id, sample_freq=sample_freq
+            )
+            s3_mat_gt_f = os.path.join(
+                os.path.dirname(tmp_gt), f"s3_mats/{view_id:05d}/s3.mat"
+            )
+        else:
+            s3_mat_gt_f = os.path.join(
+                GT.format(scene_id=scene_id), f"s3_mats/{view_id:05d}/s3.mat"
+            )
         s3_mat_gt = sio.loadmat(s3_mat_gt_f)["s3"]
     else:
         s3_mat_gt = None
-    
+
     if existed_offset_dict is None:
         existed_agg_mask = None
     else:
@@ -324,11 +366,13 @@ def compute_metrics_single_view(
             s3_rendered_val = compute_s3_val(aligned_s3_mat_rendered_dict[input_k])
             s3_val_diff = np.abs(s3_gt_val - s3_rendered_val)
             # difference between map
-            s3_mat_diff = np.mean(np.abs(aligned_s3_mat_gt - aligned_s3_mat_rendered_dict[input_k]))
+            s3_mat_diff = np.mean(
+                np.abs(aligned_s3_mat_gt - aligned_s3_mat_rendered_dict[input_k])
+            )
         else:
             s3_val_diff = 0.0
             s3_mat_diff = 0.0
-        
+
         metric_dict[input_k] = [
             view_id,
             raw_h,
@@ -349,7 +393,9 @@ def compute_metrics_single_view(
 
     # save aggregated mask
     agg_mask = (agg_mask * 255).astype(np.uint8)
-    Image.fromarray(agg_mask).save(os.path.join(debug_dir, f"agg_masks/{view_id:05d}.png"))
+    Image.fromarray(agg_mask).save(
+        os.path.join(debug_dir, f"agg_masks/{view_id:05d}.png")
+    )
 
     return metric_dict, offset_dict
 
@@ -361,6 +407,7 @@ def compute_metrics_single_scene_subproc(subproc_input):
 
     (
         worker_id,
+        dataset,
         scene_id,
         view_ids,
         input_dir_dict,
@@ -387,6 +434,7 @@ def compute_metrics_single_scene_subproc(subproc_input):
             tmp_offset_dict = existed_offset_dict[view_id]
 
         view_metric_dict, view_offset_dict = compute_metrics_single_view(
+            dataset,
             scene_id,
             view_id,
             input_dir_dict,
@@ -413,6 +461,7 @@ def compute_metrics_single_scene_mp(
     nproc,
     save_dir,
     debug_dir,
+    dataset,
     scene_id,
     input_dir_dict,
     input_k_list,
@@ -434,7 +483,12 @@ def compute_metrics_single_scene_mp(
 
     print(f"\nFind {len(all_img_fs)} images.\n")
 
-    all_view_ids = sorted([int(os.path.basename(_.rstrip("/")).split(".")[0].split("_")[0]) for _ in all_img_fs])
+    all_view_ids = sorted(
+        [
+            int(os.path.basename(_.rstrip("/")).split(".")[0].split("_")[0])
+            for _ in all_img_fs
+        ]
+    )
 
     view_id_list = [[] for _ in range(nproc)]
     for i, view_id in enumerate(all_view_ids):
@@ -447,6 +501,7 @@ def compute_metrics_single_scene_mp(
             compute_metrics_single_scene_subproc,
             zip(
                 range(nproc),
+                [dataset for _ in range(nproc)],
                 [scene_id for _ in range(nproc)],
                 view_id_list,
                 [input_dir_dict for _ in range(nproc)],
@@ -477,27 +532,52 @@ def compute_metrics_single_scene_mp(
 
 
 def process_single_scene(
-    nproc, scene_id, method_id_list, sample_freq_list, save_dir, flag_compute_s3=False, existed_offset_dict_dir=None
+    nproc,
+    dataset,
+    scene_id,
+    method_id_list,
+    sample_freq_list,
+    save_dir,
+    flag_compute_s3=False,
+    existed_offset_dict_dir=None,
 ):
 
     all_input_keys = []
     all_input_dirs = {}
 
-    scene_mtl_h = MTL_RES_DICT[scene_id]
-    scene_mtl_w = MTL_RES_DICT[scene_id]
+    if "scannet" in method_id_list[0]:
+        scene_mtl_h = SCANNET_MTL_RES
+        scene_mtl_w = SCANNET_MTL_RES
+    else:
+        scene_mtl_h = MTL_RES_DICT[scene_id]
+        scene_mtl_w = MTL_RES_DICT[scene_id]
 
     for sample_freq in sample_freq_list:
         for method_id in method_id_list:
             tmp_k = f"{sample_freq}_{method_id}"
             all_input_keys.append(tmp_k)
-            all_input_dirs[tmp_k] = ALL_EXPS[method_id].format(
-                scene_id=scene_id,
-                sample_freq=sample_freq,
-                mtl_h=scene_mtl_h,
-                mtl_w=scene_mtl_w,
-                atlas_size=MTL_ATLAS_SIZE,
-                seed=SEED,
-            )
+
+            if "scannet" in method_id:
+                all_input_dirs[tmp_k] = ALL_EXPS[method_id].format(
+                    dataset=dataset,
+                    scene_id=scene_id,
+                    sample_freq=sample_freq,
+                    mtl_h=scene_mtl_h,
+                    mtl_w=scene_mtl_w,
+                    atlas_size=SCANNET_MTL_ATLAS_SIZE,
+                    n_splitted_meshes=SCANNET_N_PARTS,
+                    seed=SEED,
+                )
+            else:
+                all_input_dirs[tmp_k] = ALL_EXPS[method_id].format(
+                    dataset=dataset,
+                    scene_id=scene_id,
+                    sample_freq=sample_freq,
+                    mtl_h=scene_mtl_h,
+                    mtl_w=scene_mtl_w,
+                    atlas_size=MTL_ATLAS_SIZE,
+                    seed=SEED,
+                )
 
     print("\n")
     pprint.pprint(all_input_dirs)
@@ -511,26 +591,33 @@ def process_single_scene(
 
     debug_dir = os.path.join(eval_save_dir, "debug_vis")
     os.makedirs(debug_dir, exist_ok=True)
-    mask_dir = os.path.join(debug_dir, "agg_masks") 
+    mask_dir = os.path.join(debug_dir, "agg_masks")
     os.makedirs(mask_dir, exist_ok=True)
     with open(os.path.join(debug_dir, "cat_img_order.txt"), "w") as f:
         for input_k in all_input_keys:
             f.write(f"{input_k}\n")
-    
+
     if existed_offset_dict_dir is None:
         existed_offset_dict = None
         existed_debug_dir = None
     else:
-        existed_offset_dict_f_list = list(glob.glob(os.path.join(existed_offset_dict_dir, scene_id, "20*/offset_dict.p")))
+        existed_offset_dict_f_list = list(
+            glob.glob(
+                os.path.join(existed_offset_dict_dir, scene_id, "20*/offset_dict.p")
+            )
+        )
         assert len(existed_offset_dict_f_list) == 1, f"{existed_offset_dict_f_list}"
         existed_offset_dict_f = existed_offset_dict_f_list[0]
         existed_offset_dict = joblib.load(existed_offset_dict_f)
-        existed_debug_dir = os.path.join(os.path.dirname(existed_offset_dict_f), "debug_vis")
+        existed_debug_dir = os.path.join(
+            os.path.dirname(existed_offset_dict_f), "debug_vis"
+        )
 
     compute_metrics_single_scene_mp(
         nproc,
         eval_save_dir,
         debug_dir,
+        dataset,
         scene_id,
         all_input_dirs,
         all_input_keys,
@@ -544,16 +631,35 @@ def process_single_scene(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--nproc", type=int, required=True, default=10,
+        "--nproc",
+        type=int,
+        required=True,
+        default=10,
     )
     parser.add_argument(
-        "--save_dir", type=str, required=True, default=".",
+        "--dataset",
+        type=str,
+        required=True,
+        default="uofi",
     )
     parser.add_argument(
-        "--scene_id", type=str, required=True, default=".",
+        "--save_dir",
+        type=str,
+        required=True,
+        default=".",
     )
     parser.add_argument(
-        "--sample_freq_list", nargs="+", type=str, required=True, default="test_1_10",
+        "--scene_id",
+        type=str,
+        required=True,
+        default=".",
+    )
+    parser.add_argument(
+        "--sample_freq_list",
+        nargs="+",
+        type=str,
+        required=True,
+        default="test_1_10",
     )
     parser.add_argument(
         "--method_id_list",
@@ -564,15 +670,20 @@ if __name__ == "__main__":
         default=".",
     )
     parser.add_argument(
-        "--compute_s3", type=int, default=0,
+        "--compute_s3",
+        type=int,
+        default=0,
     )
     parser.add_argument(
-        "--existed_offset_dict_dir", type=str, default=None,
+        "--existed_offset_dict_dir",
+        type=str,
+        default=None,
     )
     args = parser.parse_args()
 
     process_single_scene(
         args.nproc,
+        args.dataset,
         args.scene_id,
         args.method_id_list,
         args.sample_freq_list,
