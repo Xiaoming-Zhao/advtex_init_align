@@ -180,10 +180,10 @@ def render_one_scene(
             batch_proj_matrices = copy.deepcopy(
                 proj_matrices[tmp_start_i:tmp_end_i, ...]
             )
-            if stream_type == "colmap":
-                # NOTE: when creating stream file from COLMAP output to Apple's format, we flip the 2nd row.
-                # We now flip it back to reconstruct COLMAP's original output.
-                # If the conversion script for COLMAP changes, this part must be modified accordingly.
+            if stream_type == "scannet":
+                # NOTE: when creating stream file from ScanNet output to Apple's format, we flip the 2nd row.
+                # We now flip it back to reconstruct ScanNet's original output.
+                # If the conversion script for ScanNet changes, this part must be modified accordingly.
                 batch_proj_matrices[:, 1, :] = -1 * batch_proj_matrices[:, 1, :]
             elif stream_type == "apple":
                 pass
@@ -219,11 +219,11 @@ def render_one_scene(
                 flag_return_extra=True,
             )
 
-            if stream_type == "colmap":
+            if stream_type == "scannet":
                 # [B, H, W, 3]
                 # NOTE: post-process will produce images with orientation aligned with images in stream
                 # - for Apple stream, post-process will produce left-right flipped one
-                # - for Colmap stream, post-process will produce correct orientation
+                # - for ScanNet stream, post-process will produce correct orientation
                 # So we need to manually flip image here
                 new_imgs = torch.flip(torch.flip(new_imgs, dims=(2,)), dims=(1,))
                 new_masks = torch.flip(torch.flip(new_masks, dims=(2,)), dims=(1,))
@@ -317,8 +317,8 @@ def prepare_subproc(subproc_input):
                 # images in Apple stream is left-right flipped
                 cur_raw_rgb = np.fliplr(cur_raw_rgb)
                 cur_depth = np.fliplr(cur_depth)
-            elif stream_type == "colmap":
-                # images in Colmap stream is in canonical orientation
+            elif stream_type == "scannet":
+                # images in ScanNet stream is in canonical orientation
                 pass
             else:
                 raise ValueError
@@ -514,7 +514,7 @@ def prepare_one_scene(
         for idx in tqdm.tqdm(idx_list):
             if stream_type == "apple":
                 tmp_rgb = np.fliplr(gt_rgbs[idx])
-            elif stream_type == "colmap":
+            elif stream_type == "scannet":
                 tmp_rgb = gt_rgbs[idx]
             else:
                 raise ValueError
@@ -711,7 +711,7 @@ def main():
         "--pure_save_gt_info_rgb_only", type=int, default=0, help="whether only save GT rgbs.",
     )
     parser.add_argument(
-        "--stream_type", type=str, default="apple", choices=["apple"],
+        "--stream_type", type=str, default="apple", choices=["apple", "scannet"],
     )
     parser.add_argument(
         "--scannet_data_dir", type=str, default=None,

@@ -24,6 +24,7 @@ dependencies:
   - pip:
     - lpips
     - trimesh
+    - open3d==0.16.0
     - pypng
     - plyfile
     - opt_einsum

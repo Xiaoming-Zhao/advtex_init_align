@@ -255,10 +255,10 @@ def gen_avg_mtl(
                 proj_matrices[tmp_start_i:tmp_end_i, ...]
             )
 
-            if stream_type == "colmap":
-                # NOTE: when creating stream file from COLMAP output to Apple's format, we flip the 2nd row.
-                # We now flip it back to reconstruct COLMAP's original output.
-                # If the conversion script for COLMAP changes, this part must be modified accordingly.
+            if stream_type == "scannet":
+                # NOTE: when creating stream file from ScanNet output to Apple's format, we flip the 2nd row.
+                # We now flip it back to reconstruct ScanNet's original output.
+                # If the conversion script for ScanNet changes, this part must be modified accordingly.
                 batch_proj_matrices[:, 1, :] = -1 * batch_proj_matrices[:, 1, :]
             elif stream_type == "apple":
                 pass
@@ -503,7 +503,7 @@ def main():
         "--debug_vis", type=int, default=1,
     )
     parser.add_argument(
-        "--stream_type", type=str, default="apple", choices=["apple"],
+        "--stream_type", type=str, default="apple", choices=["apple", "scannet"],
     )
     parser.add_argument(
         "--scannet_data_dir", type=str, default=None,

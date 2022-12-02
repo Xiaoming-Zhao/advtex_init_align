@@ -18,8 +18,8 @@
 - [Environment Setup](#environment-setup)
 - [UofI Texture Scenes](#uofi-texture-scenes)
 - [Compile TexInit](#compile-texInit)
-- [Train](#train)
-- [Evaluate](#evaluate)
+- [Train and Evaluate UofI](#train-and-evaluate-uofi)
+- [Train and Evaluate ScanNet](#train-and-evaluate-scannet)
 - [Citation](#citation)
 
 ## Environment Setup
@@ -58,11 +58,11 @@ pip install -e . --verbose
 
 ## UofI Texture Scenes
 
-We self-collect data with an iOS App developed based on [ARKit](https://developer.apple.com/augmented-reality/) (XCode 13.1). Please download and uncompress [the dataset](https://drive.google.com/drive/folders/1aSI37AJPbynCoN8DapfYIaqCQn7ZDt3z?usp=sharing) and place it under `${TEX_DIR}/dataset/raw`. The structure should be:
+We self-collect data with an iOS App developed based on [ARKit](https://developer.apple.com/augmented-reality/) (XCode 13.1). Please download and uncompress [the dataset](https://drive.google.com/drive/folders/1aSI37AJPbynCoN8DapfYIaqCQn7ZDt3z?usp=sharing) and place it under `${TEX_DIR}/dataset/uofi`. The structure should be:
 ```
 .
 +-- dataset
-|  +-- raw
+|  +-- uofi
 |  |  +-- scene_01
 |  |  +-- scene_02
 |  |  ...
@@ -75,7 +75,7 @@ The data is in binary format and consists of information for RGB, depth, camera 
 ```bash
 export PYTHONPATH=${CODE_ROOT}:$PYTHONPATH && \
 python ${CODE_ROOT}/advtex_init_align/data/bin_data_reader.py \
---stream_dir ${CODE_ROOT}/dataset/raw/${SCENE_ID} \
+--stream_dir ${CODE_ROOT}/dataset/uofi/${SCENE_ID} \
 --save_dir ${CODE_ROOT}/dataset/extracted/${SCENE_ID}
 ```
 
@@ -147,9 +147,11 @@ cd ${TEX_INIT_DIR}
 make tex_init DEBUG=0 -j 8
 ```
 
-## Train
+## Train and Evaluate UofI
 
-We provide [run.sh](./run.sh) to illusrtate the overall pipeline. The following command will generate texture in `${CODE_ROOT}/experiments/${SCENE_ID}/optimized_texture_test_1_10`, which can be directly used in 3D rendering engine, e.g., [Blender](https://www.blender.org/) and [MeshLab](https://www.meshlab.net/).
+### Train
+
+We provide [run.sh](./run.sh) to illusrtate the overall pipeline. The following command will generate texture in `${CODE_ROOT}/experiments/uofi/${SCENE_ID}/optimized_texture_test_1_10`, which can be directly used in 3D rendering engine, e.g., [Blender](https://www.blender.org/) and [MeshLab](https://www.meshlab.net/).
 ```bash
 bash ${CODE_ROOT}/run.sh \
   ${CODE_ROOT} \
@@ -157,12 +159,54 @@ bash ${CODE_ROOT}/run.sh \
   run_train
 ```
 
-## Evaluate
+### Evaluate
 
-The following command will compute and save quantitative results in `${CODE_ROOT}/experiments/${SCENE_ID}/test_1_10/eval_results`.
+The following command will compute and save quantitative results in `${CODE_ROOT}/experiments/uofi/${SCENE_ID}/test_1_10/eval_results`.
 
 ```bash
 bash ${CODE_ROOT}/run.sh \
+  ${CODE_ROOT} \
+  ${SCENE_ID} \
+  run_eval
+```
+
+## Train and Evaluate ScanNet
+
+Download ScanNet raw data from the [website](http://www.scan-net.org/). Place them under `${TEX_DIR}/dataset/scannet_raw` with structure:
+```
+.
++-- dataset
+|  +-- scannet_raw
+|  |  +-- scene0000_00
+|  |  |  +-- scene0000_00.sens  # file
+|  |  |  ...
+|  |  +-- scene0001_00
+...
+```
+
+We use `scene0016_00` as an example:
+```bash
+export SCENE_ID=scene0016_00
+```
+
+### Train
+
+We provide [run_scannet.sh](./run_scannet.sh) to illusrtate the overall pipeline. The following command will generate texture in `${CODE_ROOT}/experiments/scannet/${SCENE_ID}/optimized_texture_test_1_10`, which can be directly used in 3D rendering engine, e.g., [Blender](https://www.blender.org/) and [MeshLab](https://www.meshlab.net/).
+
+Note, since ScanNet's scenes contain thousands of high-resolution images, the processing time will be much longer than that of UofI Texture Scenes.
+```bash
+bash ${CODE_ROOT}/run_scannet.sh \
+  ${CODE_ROOT} \
+  ${SCENE_ID} \
+  run_train
+```
+
+### Evaluate
+
+The following command will compute and save quantitative results in `${CODE_ROOT}/experiments/scannet/${SCENE_ID}/test_1_10/eval_results`.
+
+```bash
+bash ${CODE_ROOT}/run_scannet.sh \
   ${CODE_ROOT} \
   ${SCENE_ID} \
   run_eval

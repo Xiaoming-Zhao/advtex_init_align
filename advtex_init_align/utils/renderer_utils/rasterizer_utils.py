@@ -96,7 +96,7 @@ class MyMeshRasterizer(MeshRasterizer):
             # +Z points from camera to object left in PyTorch3D while +Z points from object to camera in OpenGL
             verts_view[..., 2] = -1 * verts_view[..., 2]
             # verts_view = verts_view[..., [1, 0, 2]]
-        elif self._stream_type == "colmap":
+        elif self._stream_type == "scannet":
             # NOTE: seems like in COLMAP, +Z points from camera to object: https://colmap.github.io/format.html#images-txt
             # which is aligned with PyTorch3D's settings
             pass
@@ -109,8 +109,8 @@ class MyMeshRasterizer(MeshRasterizer):
 
         # NOTE: if we uncomment the following line:
         # - apple: fail
-        # - COLMAP: succeed. However, after uncommnet, we do not need to flip the final rendered image
-        # not sure why COLMAP will word, it seems like COLMAP and PyTorch3D have same pixel coordinate system definition:
+        # - ScanNet: succeed. However, after uncommnet, we do not need to flip the final rendered image
+        # not sure why ScanNet will word, it seems like ScanNet and PyTorch3D have same pixel coordinate system definition:
         # - COLMAP: https://github.com/colmap/colmap/blob/d3a29e2/src/base/camera_models.h#L76
         # - PyTorch3D: https://github.com/facebookresearch/pytorch3d/blob/3b035f57f08295efc9af076ea60f62ad26d88b91/docs/notes/cameras.md
         # verts_screen[..., 0:2] = -1 * verts_screen[..., 0:2]

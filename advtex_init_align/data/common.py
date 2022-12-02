@@ -45,7 +45,7 @@ def cam_mat_to_ex_intr_mat(stream_type, view_mat, proj_mat, img_h, img_w):
         # Image in stream is left-right flipped, we need to convert it back.
         K[0, 2] = float((1 - proj_mat[1, 2]) / 2 * img_w)
         K[1, 2] = float((1 - proj_mat[0, 2]) / 2 * img_h)
-    elif stream_type == "colmap":
+    elif stream_type == "scannet":
         # Essentially, we just reverse the operation we used for converting to Apple stream
         pose_mat = copy.deepcopy(view_mat)
 
@@ -67,7 +67,7 @@ def cam_mat_to_ex_intr_mat(stream_type, view_mat, proj_mat, img_h, img_w):
 
 def ex_tri_mat_to_view_proj_mat(K, world2cam_mat, img_w, img_h, stream_type):
 
-    assert stream_type == "colmap", f"Currently only support COLMAP"
+    assert stream_type == "scannet", f"Currently only support ScanNet"
 
     view_mat = copy.deepcopy(world2cam_mat)
 

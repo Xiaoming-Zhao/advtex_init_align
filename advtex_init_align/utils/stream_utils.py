@@ -75,12 +75,16 @@ class StreamReader:
     def read_stream(self):
         if self._stream_type == "apple":
             self._read_apple_stream_data()
+        elif self._stream_type == "scannet":
+            self._read_scannet_stream_data()
         else:
             raise ValueError
     
     def read_write_stream_data(self, save_f, valid_idxs):
         if self._stream_type == "apple":
             new_idx_to_raw_idx_map = self._read_write_apple_stream_data(save_f, valid_idxs)
+        elif self._stream_type == "scannet":
+            new_idx_to_raw_idx_map = self._read_write_scannet_stream_data(save_f, valid_idxs)
         else:
             raise ValueError
         
@@ -326,11 +330,6 @@ class StreamReader:
                         )
     
                         transform_matrix = np.matmul(proj_matrix, view_matrix)
-    
-                        # TODO: Remove this when the raw data changes.
-                        # Currently, the view/transform matrix in raw data treats x-axis as the row of image.
-                        # We hack it to make x-axis for columns and y-axis for rows.
-                        # transform_matrix = transform_matrix[[1, 0, 2, 3], :]
 
                         if cnt % 10 == 0:
                             print(
@@ -351,6 +350,215 @@ class StreamReader:
             f"[Stream Reader] Load data from {cnt} cameras in {time.time() - tmp_start:.2f} s."
         )
 
+        return new_idx_to_raw_idx_map
+    
+    def _read_scannet_stream_data(self):
+
+        self._rgbs = []
+        self._depth_maps = []
+        self._view_matrices = []
+        self._proj_matrices = []
+        self._transform_matrices = []
+
+        self._num_cameras = 0
+
+        tmp_start = time.time()
+
+        with open(self._stream_f, "rb") as f:
+            # NOTE: Important !!!
+            # It seems like the stream data is stored in Fortan's order.
+            # Namely, it contains the data with the order of (1st column, 2nd column, ...).
+            # Therefore, we must first reshape the original data in Fortan's order then permute the dimensions.
+
+            while True:
+
+                try:
+                    # uint32
+                    rgb_height, rgb_width, rgb_n_channels = struct.unpack(
+                        "I" * 3, f.read(4 * 3)
+                    )
+                    rgb_size = rgb_height * rgb_width * rgb_n_channels
+
+                    # uint8
+                    rgb = struct.unpack("B" * rgb_size, f.read(1 * rgb_size))
+                    # Fortran order
+                    rgb = np.array(rgb, dtype=np.uint8).reshape(
+                        (rgb_n_channels, rgb_width, rgb_height)
+                    )
+
+                    # [rgb_height, rgb_width, 3]
+                    rgb = np.transpose(rgb, (2, 1, 0))
+
+                    # the last 4 is for float data type
+                    depth_height, depth_width = struct.unpack("I" * 2, f.read(4 * 2))
+                    depth_size = depth_height * depth_width * 4
+                    depth_map = struct.unpack("B" * depth_size, f.read(1 * depth_size))
+                    # TODO: view() is in-place. Not sure whether need a deepcopy?
+                    depth_map = np.array(depth_map, dtype=np.uint8).view(np.float32)
+                    # estimated depth in meters from camera
+                    depth_map = np.transpose(
+                        depth_map.reshape((depth_width, depth_height)), (1, 0)
+                    )
+
+                    # the last 4 is for float data type
+                    mat_size = self._mat_dim * self._mat_dim * 2 * 4
+                    two_matrices = struct.unpack("B" * mat_size, f.read(1 * mat_size))
+                    two_matrices = np.array(two_matrices, dtype=np.uint8).view(
+                        np.float32
+                    )
+
+                    view_matrix = np.transpose(
+                        two_matrices[:16].reshape((self._mat_dim, self._mat_dim)),
+                        (1, 0),
+                    )
+                    proj_matrix = np.transpose(
+                        two_matrices[16:].reshape((self._mat_dim, self._mat_dim)),
+                        (1, 0),
+                    )
+
+                    transform_matrix = np.matmul(proj_matrix, view_matrix)
+
+                    # TODO: Remove this when the raw data changes.
+                    # Currently, the view/transform matrix in raw data treats x-axis as the row of image.
+                    # We hack it to make x-axis for columns and y-axis for rows.
+                    # transform_matrix = transform_matrix[[1, 0, 2, 3], :]
+
+                    self._num_cameras += 1
+                    if self._num_cameras % 10 == 0:
+                        print(
+                            f"[daemon] Already load data from {self._num_cameras} cameras."
+                        )
+
+                    self._rgbs.append(rgb)
+                    self._depth_maps.append(depth_map)
+                    self._view_matrices.append(view_matrix)
+                    self._proj_matrices.append(proj_matrix)
+                    self._transform_matrices.append(transform_matrix)
+                except:
+                    # traceback.print_exc()
+                    # err = sys.exc_info()[0]
+                    # print(err)
+                    break
+
+        print(
+            f"[daemon] Load data from {self._num_cameras} cameras in {time.time() - tmp_start:.2f} s."
+        )
+
+        # [#cameras, 4, 4], float32
+        self._view_matrices = np.array(self._view_matrices)
+        self._proj_matrices = np.array(self._proj_matrices)
+        self._transform_matrices = np.array(self._transform_matrices)
+    
+    def _read_write_scannet_stream_data(self, save_f, valid_idxs):
+
+        tmp_start = time.time()
+
+        new_idx_to_raw_idx_map = {}
+        
+        new_idx = -1
+        cnt = -1
+
+        with open(save_f, "wb") as out_f:
+
+            with open(self._stream_f, "rb") as f:
+                # NOTE: Important !!!
+                # It seems like the stream data is stored in Fortan's order.
+                # Namely, it contains the data with the order of (1st column, 2nd column, ...).
+                # Therefore, we must first reshape the original data in Fortan's order then permute the dimensions.
+    
+                while True:
+
+                    cnt += 1
+                    if cnt in valid_idxs:
+                        flag_write = True
+                    else:
+                        flag_write = False
+    
+                    try:
+                        # uint32
+                        rgb_height, rgb_width, rgb_n_channels = struct.unpack(
+                            "I" * 3, f.read(4 * 3)
+                        )
+                        if flag_write:
+                            out_f.write(struct.pack("I" * 3, rgb_height, rgb_width, rgb_n_channels))
+
+                        rgb_size = rgb_height * rgb_width * rgb_n_channels
+    
+                        # uint8
+                        rgb = struct.unpack("B" * rgb_size, f.read(1 * rgb_size))
+                        if flag_write:
+                            out_f.write(struct.pack("B" * rgb_size, *rgb))
+
+                        # Fortran order
+                        rgb = np.array(rgb, dtype=np.uint8).reshape(
+                            (rgb_n_channels, rgb_width, rgb_height)
+                        )
+    
+                        # [rgb_height, rgb_width, 3]
+                        rgb = np.transpose(rgb, (2, 1, 0))
+    
+                        # the last 4 is for float data type
+                        depth_height, depth_width = struct.unpack("I" * 2, f.read(4 * 2))
+                        if flag_write:
+                            out_f.write(struct.pack("I" * 2, depth_height, depth_width))
+
+                        depth_size = depth_height * depth_width * 4
+
+                        depth_map = struct.unpack("B" * depth_size, f.read(1 * depth_size))
+                        if flag_write:
+                            out_f.write(struct.pack("B" * depth_size, *depth_map))
+
+                        # TODO: view() is in-place. Not sure whether need a deepcopy?
+                        depth_map = np.array(depth_map, dtype=np.uint8).view(np.float32)
+                        # estimated depth in meters from camera
+                        depth_map = np.transpose(
+                            depth_map.reshape((depth_width, depth_height)), (1, 0)
+                        )
+    
+                        # the last 4 is for float data type
+                        mat_size = self._mat_dim * self._mat_dim * 2 * 4
+                        two_matrices = struct.unpack("B" * mat_size, f.read(1 * mat_size))
+                        if flag_write:
+                            out_f.write(struct.pack("B" * mat_size, *two_matrices))
+
+                        two_matrices = np.array(two_matrices, dtype=np.uint8).view(
+                            np.float32
+                        )
+    
+                        view_matrix = np.transpose(
+                            two_matrices[:16].reshape((self._mat_dim, self._mat_dim)),
+                            (1, 0),
+                        )
+                        proj_matrix = np.transpose(
+                            two_matrices[16:].reshape((self._mat_dim, self._mat_dim)),
+                            (1, 0),
+                        )
+    
+                        transform_matrix = np.matmul(proj_matrix, view_matrix)
+    
+                        # TODO: Remove this when the raw data changes.
+                        # Currently, the view/transform matrix in raw data treats x-axis as the row of image.
+                        # We hack it to make x-axis for columns and y-axis for rows.
+                        # transform_matrix = transform_matrix[[1, 0, 2, 3], :]
+    
+                        if cnt % 10 == 0:
+                            print(
+                                f"[daemon] Already load data from {cnt} cameras."
+                            )
+                        
+                        if flag_write:
+                            new_idx += 1
+                            new_idx_to_raw_idx_map[new_idx] = cnt
+                    except:
+                        # traceback.print_exc()
+                        # err = sys.exc_info()[0]
+                        # print(err)
+                        break
+    
+            print(
+                f"[daemon] Load data from {cnt} cameras in {time.time() - tmp_start:.2f} s."
+            )
+            
         return new_idx_to_raw_idx_map
     
 

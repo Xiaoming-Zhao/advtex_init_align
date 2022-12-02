@@ -31,7 +31,7 @@ def post_render_process(stream_type, target_view, mask, render_size_w, render_si
             ImageOps.mirror(img),
             dtype=np.uint8,
         )
-    elif stream_type == "colmap":
+    elif stream_type == "scannet":
         new_img = np.array(
             ImageOps.flip(ImageOps.mirror(img)),
             dtype=np.uint8,
@@ -45,7 +45,7 @@ def post_render_process(stream_type, target_view, mask, render_size_w, render_si
             ImageOps.mirror(mask),
             dtype=np.uint8,
         )
-    elif stream_type == "colmap":
+    elif stream_type == "scannet":
         new_mask = np.array(
             ImageOps.flip(ImageOps.mirror(mask)),
             dtype=np.uint8,
@@ -111,7 +111,7 @@ def post_pix_assign_process_torch(
     def flip_func(input_tensor, stream_type):
         if stream_type == "apple":
             input_tensor = torch.flip(input_tensor, dims=(2,))
-        elif stream_type == "colmap":
+        elif stream_type == "scannet":
             input_tensor = torch.flip(torch.flip(input_tensor, dims=(2,)), dims=(1,))
         else:
             raise ValueError
@@ -444,7 +444,7 @@ def retrieve_pixel_val_torch(
                 target_view[
                     non_render_batch, non_render_rows, non_render_cols, :
                 ] = torch.zeros(3, dtype=mtl_imgs.dtype, device=device)
-            elif stream_type == "colmap":
+            elif stream_type == "scannet":
                 target_view[
                     non_render_batch, non_render_rows, non_render_cols, :
                 ] = 0 * torch.ones(3, dtype=mtl_imgs.dtype, device=device)
