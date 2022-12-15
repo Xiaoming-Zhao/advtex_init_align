@@ -1,5 +1,5 @@
-#ifndef __H_MPSOLVER__
-#define __H_MPSOLVER__
+#ifndef H_MPSOLVER
+#define H_MPSOLVER
 
 #include <vector>
 

@@ -1,5 +1,5 @@
-#ifndef __H_OURMESH_DATA__
-#define __H_OURMESH_DATA__
+#ifndef H_OURMESH_DATA
+#define H_OURMESH_DATA
 
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Surface_mesh.h>

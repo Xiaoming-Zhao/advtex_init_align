@@ -40,10 +40,8 @@ void StreamFile::ClearData() {
     std::vector<MapMatrix4f>().swap(projMatrixMap);
 
     for(int k = 0; k < RGBImages.size(); ++k) {
-        if(RGBImages[k] != NULL) {
-            delete RGBImages[k];
-            RGBImages[k] = NULL;
-        }
+        delete RGBImages[k];
+        RGBImages[k] = NULL;
     }
     std::vector<boost::gil::rgb8_image_t*>().swap(RGBImages);
     streamType = STREAM_UNKNOWN;
