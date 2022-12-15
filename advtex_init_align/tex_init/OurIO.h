@@ -1,5 +1,5 @@
-#ifndef __H_OURIO__
-#define __H_OURIO__
+#ifndef H_OURIO
+#define H_OURIO
 
 #include <vector>
 #include <string>

@@ -1,5 +1,5 @@
-#ifndef __H_REGION__
-#define __H_REGION__
+#ifndef H_REGION
+#define H_REGION
 
 #include <iostream>
 #include <vector>
@@ -2173,4 +2173,4 @@ public:
 
 #endif
 
-#endif /* __H_REGION__ */
+#endif /* H_REGION */

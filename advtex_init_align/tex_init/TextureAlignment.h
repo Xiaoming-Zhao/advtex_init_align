@@ -1,5 +1,5 @@
-#ifndef __H_TEXTURE_ALIGNER__
-#define __H_TEXTURE_ALIGNER__
+#ifndef H_TEXTURE_ALIGNER
+#define H_TEXTURE_ALIGNER
 
 #include <vector>
 #include <string>
@@ -198,4 +198,4 @@ private:
 
 } //end namespace
 
-#endif /* ifndef __H_TEXTURE_ALIGNER__ */
+#endif /* ifndef H_TEXTURE_ALIGNER */

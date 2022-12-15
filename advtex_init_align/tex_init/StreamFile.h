@@ -1,5 +1,5 @@
-#ifndef __H_STREAM_FILE__
-#define __H_STREAM_FILE__
+#ifndef H_STREAM_FILE
+#define H_STREAM_FILE
 
 #include <string>
 #include <vector>

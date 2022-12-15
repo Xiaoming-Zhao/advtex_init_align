@@ -1,5 +1,5 @@
-#ifndef __H_UTILS__
-#define __H_UTILS__
+#ifndef H_UTILS
+#define H_UTILS
 
 #include <iostream>
 #include <fstream>
@@ -90,4 +90,4 @@ void TestMPSolver(NS_MPSolver::MPSolver<float, int>& MP, std::default_random_eng
 
 } //end namespace NS_Utils
 
-#endif /* ifndef __H_UTILS__ */
+#endif /* ifndef H_UTILS */

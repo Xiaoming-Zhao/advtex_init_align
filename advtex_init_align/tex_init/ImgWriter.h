@@ -1,5 +1,5 @@
-#ifndef __H_IMG_WRITER2__
-#define __H_IMG_WRITER2__
+#ifndef H_IMG_WRITER2
+#define H_IMG_WRITER2
 
 #include <string>
 #include <queue>
@@ -58,4 +58,4 @@ public:
 
 } /* end namespace NS_ImgWriter */
 
-#endif /* ifndef __H_IMG_WRITER__ */
+#endif /* ifndef H_IMG_WRITER2 */
