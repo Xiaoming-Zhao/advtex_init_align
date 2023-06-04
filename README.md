@@ -228,4 +228,5 @@ bash ${CODE_ROOT}/run_scannet.sh \
 - We build on [Adversarial Texture Optimization](https://github.com/hjwdzh/AdversarialTexture).
 - Mesh flattening code is adopted from [boundary-first-flattening](https://github.com/GeometryCollective/boundary-first-flattening).
 - Markov Random Fields solver comes from [GSPEN](https://github.com/cgraber/GSPEN).
-- S3 metrics is adopted from [author's implementation](https://sites.google.com/site/cuongvt101/research/Sharpness-measure).
+- S3 metrics is adopted from [author's implementation](https://web.archive.org/web/20210822041040/https://sites.google.com/site/cuongvt101/research/Sharpness-measure).
+    - Since the author's website is down, I share [an intact mirror of the original implementation](https://github.com/Xiaoming-Zhao/s3_sharpness_measure).
