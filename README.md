@@ -58,7 +58,7 @@ pip install -e . --verbose
 
 ## UofI Texture Scenes
 
-We self-collect data with an iOS App developed based on [ARKit](https://developer.apple.com/augmented-reality/) (XCode 13.1). Please download and uncompress [the dataset](https://drive.google.com/drive/folders/1aSI37AJPbynCoN8DapfYIaqCQn7ZDt3z?usp=sharing) and place it under `${TEX_DIR}/dataset/uofi`. The structure should be:
+We self-collect data with an iOS App developed based on [ARKit](https://developer.apple.com/augmented-reality/) (XCode 13.1). Please download the dataset from [the release page](https://github.com/Xiaoming-Zhao/advtex_init_align/releases) or [this link](https://drive.google.com/drive/folders/1aSI37AJPbynCoN8DapfYIaqCQn7ZDt3z?usp=sharing), uncompress it, and place it under `${TEX_DIR}/dataset/uofi`. The structure should be:
 ```
 .
 +-- dataset
